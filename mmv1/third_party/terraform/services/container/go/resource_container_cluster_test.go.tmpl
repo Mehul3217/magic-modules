@@ -148,7 +148,7 @@ func TestAccContainerCluster_misc(t *testing.T) {
 				ResourceName:            "google_container_cluster.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"remove_default_node_pool", "deletion_protection"},
+				ImportStateVerifyIgnore: []string{"remove_default_node_pool", "deletion_protection", "resource_labels", "terraform_labels"},
 			},
 			{
 				Config: testAccContainerCluster_misc_update(clusterName, networkName, subnetworkName),
@@ -157,7 +157,7 @@ func TestAccContainerCluster_misc(t *testing.T) {
 				ResourceName:            "google_container_cluster.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"remove_default_node_pool", "deletion_protection"},
+				ImportStateVerifyIgnore: []string{"remove_default_node_pool", "deletion_protection", "resource_labels", "terraform_labels"},
 			},
 		},
 	})
@@ -488,7 +488,6 @@ func TestAccContainerCluster_withFQDNNetworkPolicy(t *testing.T) {
 }
 {{- end }}
 
-{{ if ne $.TargetVersionName `ga` -}}
 func TestAccContainerCluster_withAdditiveVPC(t *testing.T) {
 	t.Parallel()
 
@@ -511,7 +510,6 @@ func TestAccContainerCluster_withAdditiveVPC(t *testing.T) {
 		},
 	})
 }
-{{- end }}
 
 func TestAccContainerCluster_withMasterAuthConfig_NoCert(t *testing.T) {
 	t.Parallel()
@@ -699,7 +697,6 @@ resource "google_container_cluster" "cluster" {
 `, clusterName, clusterName)
 }
 
-{{ if ne $.TargetVersionName `ga` -}}
 func testAccContainerCluster_withAdditiveVPC(clusterName string) string {
 	return fmt.Sprintf(`
 resource "google_container_cluster" "cluster" {
@@ -716,7 +713,6 @@ resource "google_container_cluster" "cluster" {
 }
 `, clusterName)
 }
-{{- end }}
 
 {{ if ne $.TargetVersionName `ga` -}}
 func testAccContainerCluster_withFQDNNetworkPolicy(clusterName string, enabled bool) string {
@@ -8469,6 +8465,7 @@ resource "google_project" "host_project" {
   project_id      = "%s-host"
   org_id          = "%s"
   billing_account = "%s"
+  deletion_policy = "DELETE"
 }
 
 resource "google_project_service" "host_project" {
@@ -8485,6 +8482,7 @@ resource "google_project" "service_project" {
   project_id      = "%s-service"
   org_id          = "%s"
   billing_account = "%s"
+  deletion_policy = "DELETE"
 }
 
 resource "google_project_service" "service_project" {
@@ -10972,6 +10970,11 @@ resource "google_container_cluster" "primary" {
   network    = "%s"
   subnetwork    = "%s"
 
+  node_config {
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/cloud-platform",
+    ]
+  }
   node_pool_defaults {
     node_config_defaults {
       containerd_config {
